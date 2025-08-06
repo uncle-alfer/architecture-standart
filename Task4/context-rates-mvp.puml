@@ -1,0 +1,19 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+Person(boUser,"Сотрудник бэк-офиса")
+Person(ccOp,"Оператор кол-центра")
+System_Ext(rateSvc,"Rate-Service")
+System_Ext(bankCC,"Система кол-центра")
+System_Ext(partnerCC,"Партнёрский кол-центр")
+System_Ext(kafka,"Kafka Cluster")
+System_Ext(sftp,"SFTP-шлюз")
+System(rateDist,"Rate-Distribution Service")
+
+Rel(boUser, rateSvc, "Меняет ставки")
+Rel(rateSvc, kafka, "`RateUpdated`")
+Rel(kafka, rateDist, "Consume `RateUpdated`")
+Rel(rateDist, bankCC, "POST /rates (REST, mTLS)")
+Rel(rateDist, sftp, "Пишет CSV-файл")
+Rel(partnerCC, sftp, "Забирает файл (SFTP)")
+Rel(ccOp, bankCC, "Запрашивает ставки")
+@enduml

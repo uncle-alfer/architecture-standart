@@ -1,0 +1,47 @@
+graph TD
+    %% ---------- Стили ----------
+    classDef internal fill:#dfe8ff,stroke:#395baf,color:#000
+    classDef external fill:#c6f7e2,stroke:#20765e,color:#000
+    classDef manual   fill:#eeeeee,stroke:#999,color:#000
+    classDef actor    fill:#ffffff,stroke:#000,color:#000,stroke-dasharray:5 3
+
+    %% ---------- Участники процесса ----------
+    subgraph Actors["Участники процесса"]
+        Client["Клиент"]:::actor
+        BranchEmp["Управление обслуживанием в сети отделений"]:::actor
+        CCoperator["Кол-центр банка «Стандарт»"]:::actor
+        PartnerCCteam["Партнёрский кол-центр"]:::actor
+        DepositBO["Управление обслуживанием депозитных продуктов"]:::actor
+        CreditBO["Управление обслуживанием кредитных продуктов"]:::actor
+    end
+
+    %% ---------- Внутренние приложения ----------
+    subgraph SystemsInternal["Внутренние приложения"]
+        ABS["Автоматизированная банковская система (АБС)"]:::internal
+        CCsys["Система кол-центра"]:::internal
+        SMS["СМС-шлюз телеком-оператора"]:::internal
+    end
+
+    %% ---------- Внешние / вспомогательные ----------
+    subgraph SystemsExternal["Внешние / вспомогательные"]
+        PartnerCCsys["Система партнёрского кол-центра"]:::external
+        ExcelRates["Excel-файл расчёта ставок"]:::manual
+    end
+
+    %% ---------- Интеграционные связи ----------
+    Client -->|Звонок| CCoperator
+    CCoperator -->|Создание обращения| CCsys
+    CCsys -->|REST API| ABS
+    ABS -->|SMPP / HTTP| SMS
+    SMS -->|SMS| Client
+
+    Client -->|Визит| BranchEmp
+    BranchEmp -->|Desktop-клиент| ABS
+    BranchEmp -.->|E-mail: запрос ставки| DepositBO
+    DepositBO -->|Excel-расчёт| ExcelRates
+    DepositBO -.->|E-mail: ставка| BranchEmp
+    DepositBO -.->|Запрос риска| CreditBO
+    CreditBO -->|Ответ риска| DepositBO
+
+    PartnerCCteam -->|Обработка звонков| PartnerCCsys
+    PartnerCCsys -->|E-mail заявки| DepositBO
