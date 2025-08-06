@@ -1,0 +1,30 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+Person(customer, "Клиент интернет-банка")
+Person(prospect, "Новый клиент сайта")
+Person(boDep, "Менеджер бэк-офиса депозитов")
+System_Boundary(bank, "Банк «Стандарт»") {
+  System_Ext(abs, "АБС (Oracle)")
+  System_Ext(ccSys, "Система кол-центра")
+  System_Ext(smsGw, "SMS-шлюз оператора")
+  System_Ext(kafka, "Kafka Cluster")
+  System(ib, "Интернет-банк")
+  System(site, "Публичный сайт")
+  System(rates, "Rate-Service")
+  System(depositSvc, "Deposit-Service")
+  System(smsSvc, "SMS-Service")
+}
+
+Rel(prospect, site, "Заполняет форму заявки (UC-1)")
+Rel(site, ccSys, "POST /lead (REST)")
+Rel(customer, ib, "Работает в IB (UC-3)")
+Rel(ib, depositSvc, "API /DepositApplication")
+Rel(depositSvc, kafka, "Паблишит события")
+Rel(kafka, abs, "Consume DepositApplicationCreated")
+Rel(abs, kafka, "Publish DepositOpened")
+Rel(kafka, depositSvc, "Consume DepositOpened")
+Rel(depositSvc, smsSvc, "Topic sms-out (Kafka)")
+Rel(smsSvc, smsGw, "SMPP/HTTP\nотправка SMS")
+Rel(boDep, abs, "Обрабатывает заявки\nчерез UI АБС")
+Rel(ib, rates, "GET /PersonalRates")
+@enduml

@@ -1,0 +1,16 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+Container_Boundary(rateDist,"Rate-Distribution Service") {
+  Container(rateListener,"RateListener","Spring Boot","Kafka consumer; валидирует событие")
+  Container(rateCache,"RateCache","PostgreSQL","Текущие ставки + аудит")
+  Container(api,"Rates API","Spring Boot REST","Отдаёт ставки для кол-центра")
+  Container(fileExport,"FileExport Job","Spring Batch","Пишет CSV и кладёт на SFTP")
+  System_Ext(sftp, "SFTP Server")
+}
+
+Rel(rateListener, rateCache, "INSERT/UPDATE")
+Rel(api, rateCache, "SELECT")
+Rel(rateListener, fileExport, "Триггер задания")
+Rel(fileExport, rateCache, "SELECT")
+Rel(fileExport, sftp, "SFTP PUT")
+@enduml

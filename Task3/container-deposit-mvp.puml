@@ -1,0 +1,37 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+Container_Boundary(ib, "Интернет-банк (ASP.NET MVC 4.5)") {
+  Container(ibWeb, "IB Web", "C# / ASP.NET MVC", "UI + Controllers")
+  Container(ibOutbox, "Outbox Gateway", "C# Worker", "Пишет события в Kafka")
+  ContainerDb(ibDb, "MS SQL")
+}
+
+Container(rates, "Rate-Service", "Java Spring Boot", "Калькуляция и хранение историй ставок")
+ContainerDb(ratesDb, "MS SQL")
+Rel(rates, ratesDb, "JPA/Hibernate")
+
+Container(depositSvc, "Deposit-Service", "Java Spring Boot", "CRUD заявок, интеграция с АБС")
+ContainerDb(depositDb, "MS SQL")
+Rel(depositSvc, depositDb, "JPA/Hibernate")
+
+Container(smsSvc, "SMS-Service", "PHP Laravel", "Отправка SMS, ретраи")
+
+System_Ext(smsGw, "SMS-шлюз оператора")
+System_Ext(abs, "АБС (Oracle)")
+System_Ext(ccSys, "Система кол-центра")
+System_Ext(kafka, "Kafka Cluster")
+System_Ext(site, "Публичный сайт")
+
+Rel(customer, ibWeb, "HTTPS")
+Rel(ibWeb, ibOutbox, "Записывает события")
+Rel(ibOutbox, kafka, "Produce messages")
+Rel(ibWeb, depositSvc, "REST")
+Rel(depositSvc, abs, "JDBC Link / PL-SQL зачем-то")
+Rel(depositSvc, kafka, "Produce / Consume")
+Rel(kafka, depositSvc, "Consume")
+Rel(depositSvc, smsSvc, "Produce sms-out")
+Rel(smsSvc, smsGw, "HTTPS SMPP")
+Rel(rates, abs, "Read Excel via API stub / later direct")
+Rel(ibWeb, rates, "REST /PersonalRates")
+Rel(site, ccSys, "REST /lead")
+@enduml
